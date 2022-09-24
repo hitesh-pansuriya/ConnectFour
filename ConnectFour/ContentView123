@@ -1,0 +1,264 @@
+//
+//  ContentView.swift
+//  ConnectFour
+//
+//  Created by PC on 16/06/22.
+//
+
+import SwiftUI
+
+struct ContentView: View {
+    @State var data : [[Int]] = [
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+    ]
+    @State var turn : Bool = true
+    @State var winer : Bool = false
+    @State var greenLocation : [(Int, Int)] = []
+    @State var xPoint : Int = 0
+    @State var oPoint : Int = 0
+    @State var animationAmount = 1.0
+    var buttons = #colorLiteral(red: 0.1921568662, green: 0.007843137719, blue: 0.09019608051, alpha: 1)
+    var bg1 = #colorLiteral(red: 0.05882352963, green: 0.180392161, blue: 0.2470588237, alpha: 1)
+    var bg2 = #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)
+    var circle = #colorLiteral(red: 0.9607843161, green: 0.7058823705, blue: 0.200000003, alpha: 1)
+    var cross = #colorLiteral(red: 0.8078431487, green: 0.02745098062, blue: 0.3333333433, alpha: 1)
+    enum Result{
+        case winer
+        case draw
+        case continues
+    }
+    
+    var body: some View {
+        ZStack {
+            LinearGradient(gradient: Gradient(colors: [Color(bg1), Color(bg2)]),
+                           startPoint: .top,
+                           endPoint: .bottom)
+                .edgesIgnoringSafeArea(.all)
+            VStack{
+                HStack{
+                    Text("OPoint:-\(oPoint)")
+                        .font(.title)
+                        .foregroundColor(.white)
+                        .padding()
+                        .aspectRatio(contentMode: .fit)
+                        .background(Color.yellow)
+                        .cornerRadius(10)
+                    
+                    Spacer()
+                    
+                    Text("XPoint:-\(xPoint)")
+                        .font(.title)
+                        .foregroundColor(.white)
+                        .padding()
+                        .aspectRatio(contentMode: .fit)
+                        .background(Color.orange)
+                        .cornerRadius(10)
+                }
+                .padding()
+                .offset(y: -100)
+                
+                board
+                    .padding()
+                if winer {
+                    resetButton
+                }else{
+                    eraseButton
+                }
+                
+            }
+        }
+    }
+    
+    var board: some View {
+        VStack{
+            ForEach(0..<6){ i in
+                HStack{
+                    ForEach(0..<7){ j in
+                        Button(action: {
+                            data[0][j] = turn ? 1 : 2
+                            Grevity(y: j, arr: data)
+                            turn.toggle()
+                            if ConnectFour(arx: data) != .continues  {
+                                animationAmount = 1
+                                winer = true
+                            }
+                        }, label: {
+                            cell(i: i, j: j)
+                        })
+                            .allowsHitTesting(!winer && data[0][j] == 0)
+                     
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+    
+    func cell(i: Int, j: Int) -> some View {
+        VStack{
+            if self.data[i][j] == 0 {
+                Rectangle()
+                    .aspectRatio(contentMode: .fit)
+                    .foregroundColor(Color(buttons))
+                    .background(Color.black)
+            }
+            else if self.data[i][j] == 1 {
+                Rectangle()
+                    .aspectRatio(contentMode: .fit)
+                    .foregroundColor(Color(circle))
+                    .overlay{
+                        if self.greenLocation.contains(where:{ $0 == (i, j) }){
+                            Image(systemName: "multiply")
+                                .resizable()
+                                .foregroundColor(Color.red)
+                        }
+                    }
+            }
+            else {
+                Rectangle()
+                    .aspectRatio(contentMode: .fit)
+                    .foregroundColor(Color(cross))
+                    .overlay{
+                        if self.greenLocation.contains(where:{ $0 == (i, j) })  {
+                            Image(systemName: "multiply")
+                                .resizable()
+                                .foregroundColor(Color.orange)
+                        }
+                    }
+            }
+        }
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white, lineWidth: 2)
+        )
+    }
+    
+    var resetButton: some View {
+        Button(action: {
+            reset()
+        }, label: {
+            Text("Reset")
+                .font(.title)
+                .frame(width: 200, height: 50)
+                .background(Color.red)
+                .cornerRadius(20)
+        })
+            .overlay(
+                Capsule()
+                    .stroke(.red)
+                    .scaleEffect(animationAmount)
+                    .opacity(2 - animationAmount)
+                    .animation(
+                        .easeInOut(duration: 1)
+                            .repeatForever(autoreverses: false),
+                        value: animationAmount
+                        
+                    )
+            )
+            .onAppear{
+                animationAmount = 2
+            }
+    }
+    
+    var eraseButton: some View {
+        Button(action: {
+            reset()
+        }, label: {
+            Text("Erase")
+                .font(.title)
+                .frame(width: 200, height: 50)
+                .background(Color.red)
+                .cornerRadius(20)
+        })
+        
+    }
+    
+    func reset(){
+        self.data = [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+        ]
+        self.winer = false
+        self.greenLocation = []
+       
+    }
+    
+    func Grevity(y : Int, arr: [[Int]]) {
+        for i in (1...5).reversed(){
+            if data[i][y] == 0 {
+                data[i][y] = data[0][y]
+                data[0][y] = 0
+                break
+            }
+        }
+    }
+    
+    
+    func ConnectFour(arx: [[Int]]) -> Result {
+        //------
+        for i in 0...5 {
+            for j in 0...3 {
+                let ary1 = Set(data[i][j...j+3])
+                if ary1 == [1] {
+                    self.greenLocation += [(i, j), (i, j+1), (i, j+2), (i, j+3)]
+                }else if ary1 == [2] {
+                    self.greenLocation += [(i, j), (i, j+1), (i, j+2), (i, j+3)]
+                }
+            }
+            
+        }
+        //|||||
+        for i in 0...2 {
+            let arrs = data[i...i+3]
+            for j in 0...6 {
+                let ary1 = Set(arrs.map({$0[j]}))
+                if ary1 == [1] {
+                    self.greenLocation +=  [(i, j), (i+1, j), (i+2, j), (i+3, j)]
+                }else if  ary1 == [2]{
+                    self.greenLocation += [(i, j), (i+1, j), (i+2, j), (i+3, j)]
+                }
+            }
+            
+        }
+        
+        
+        // \\\\\\\
+        for i in 0...2{
+            for j in 0...3{
+                let lll = [(i,j), (i+1,1+j), (i+2,2+j), (i+3,3+j)]
+                let ans = Set(lll.map({data[$0.0][$0.1]}))
+                
+                let mmm = [(i,j+3), (i+1,j+2), (i+2,j+1), (i+3,j)]
+                let ans2 = Set(mmm.map({data[$0.0][$0.1]}))
+                
+                if ans == [1] || ans == [2]  {
+                    self.greenLocation += lll
+                }else if ans2 == [1] || ans2 == [2]{
+                    self.greenLocation += mmm
+                }
+            }
+        }
+        self.oPoint += Set(self.greenLocation.map({arx[$0.0][$0.1]})) == [1] ? 1 : 0
+        self.xPoint += Set(self.greenLocation.map({arx[$0.0][$0.1]})) == [2] ? 1 : 0
+        return !self.greenLocation.isEmpty ? .winer : (arx.contains(where: {$0.contains(0)}) ? .continues : .draw)
+        
+       
+    }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+.previewInterfaceOrientation(.portrait)
+    }
+}
